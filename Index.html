@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>暑假行事曆 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', '微軟正黑體', sans-serif;
+    background: #f0f4ff;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+
+  h1 {
+    text-align: center;
+    color: #2d3a8c;
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #7b8ab8;
+    font-size: 0.9rem;
+    margin-bottom: 28px;
+  }
+
+  .calendar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .month-block {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(45,58,140,0.09);
+    overflow: hidden;
+  }
+
+  .month-header {
+    background: linear-gradient(135deg, #4f6ef7 0%, #7c3aed 100%);
+    color: #fff;
+    padding: 16px 24px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+
+  .weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #eef1ff;
+    border-bottom: 1px solid #e0e5f7;
+  }
+
+  .weekdays span {
+    text-align: center;
+    padding: 8px 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #5c6bc0;
+  }
+
+  .weekdays span:first-child { color: #e53935; }
+  .weekdays span:last-child  { color: #1976d2; }
+
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: #e8ecf8;
+  }
+
+  .day-cell {
+    background: #fff;
+    min-height: 88px;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+  }
+
+  .day-cell:hover { background: #f5f7ff; }
+  .day-cell.empty { background: #f9faff; cursor: default; }
+
+  .day-cell.today .day-num {
+    background: #4f6ef7;
+    color: #fff;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .day-cell.sunday .day-num { color: #e53935; }
+  .day-cell.saturday .day-num { color: #1976d2; }
+
+  .day-num {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #3a3f5c;
+    margin-bottom: 4px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .event-chip {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    line-height: 1.5;
+  }
+
+  .event-chip:hover { opacity: 0.85; }
+
+  /* Modal */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .overlay.active { display: flex; }
+
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    width: 360px;
+    max-width: 95vw;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  }
+
+  .modal h2 {
+    font-size: 1.1rem;
+    color: #2d3a8c;
+    margin-bottom: 20px;
+  }
+
+  .modal label {
+    display: block;
+    font-size: 0.82rem;
+    color: #5c6bc0;
+    margin-bottom: 4px;
+    margin-top: 12px;
+  }
+
+  .modal input, .modal select, .modal textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1.5px solid #dde3f5;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border 0.15s;
+  }
+  .modal input:focus, .modal select:focus, .modal textarea:focus {
+    border-color: #4f6ef7;
+  }
+  .modal textarea { resize: vertical; min-height: 64px; }
+
+  .color-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .color-dot {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border 0.15s;
+  }
+  .color-dot.selected { border-color: #333; }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .btn {
+    flex: 1;
+    padding: 9px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .btn-save  { background: #4f6ef7; color: #fff; }
+  .btn-save:hover  { background: #3b5bdb; }
+  .btn-del   { background: #fee2e2; color: #e53935; }
+  .btn-del:hover   { background: #fecaca; }
+  .btn-cancel{ background: #f0f4ff; color: #5c6bc0; }
+  .btn-cancel:hover{ background: #e0e5f7; }
+
+  .event-list-section {
+    max-width: 900px;
+    margin: 0 auto 40px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(45,58,140,0.09);
+    padding: 24px;
+  }
+  .event-list-section h2 {
+    color: #2d3a8c;
+    font-size: 1rem;
+    margin-bottom: 14px;
+  }
+  .event-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .event-table th {
+    text-align: left;
+    padding: 6px 10px;
+    color: #5c6bc0;
+    border-bottom: 2px solid #eef1ff;
+  }
+  .event-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #f0f4ff;
+    color: #3a3f5c;
+  }
+  .event-table tr:last-child td { border-bottom: none; }
+  .event-dot-td { width: 12px; }
+  .event-dot-sm {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .no-events { color: #a0a8cc; font-size: 0.85rem; text-align: center; padding: 16px; }
+</style>
+</head>
+<body>
+
+<h1>🌞 暑假行事曆 2026</h1>
+<p class="subtitle">點擊日期新增活動 · 點擊活動可編輯或刪除</p>
+
+<div class="calendar-wrapper" id="calendarWrapper"></div>
+
+<div class="event-list-section">
+  <h2>📋 所有活動清單</h2>
+  <table class="event-table" id="eventTable">
+    <thead>
+      <tr>
+        <th class="event-dot-td"></th>
+        <th>日期</th>
+        <th>活動名稱</th>
+        <th>備註</th>
+      </tr>
+    </thead>
+    <tbody id="eventTableBody">
+      <tr><td colspan="4" class="no-events">尚無活動，點擊日期新增！</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2 id="modalTitle">新增活動</h2>
+    <label>活動名稱 *</label>
+    <input type="text" id="inputName" placeholder="例：去海邊玩" maxlength="30">
+    <label>備註</label>
+    <textarea id="inputNote" placeholder="選填"></textarea>
+    <label>顏色</label>
+    <div class="color-row" id="colorRow"></div>
+    <div class="btn-row">
+      <button class="btn btn-save" onclick="saveEvent()">儲存</button>
+      <button class="btn btn-del" id="btnDelete" onclick="deleteEvent()" style="display:none">刪除</button>
+      <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#f97316','#22c55e','#3b82f6','#ec4899','#8b5cf6','#14b8a6','#ef4444','#eab308'];
+const MONTHS = [
+  { year: 2026, month: 6, label: '六月' },
+  { year: 2026, month: 7, label: '七月' },
+  { year: 2026, month: 8, label: '八月' },
+];
+const WEEKDAYS = ['日','一','二','三','四','五','六'];
+const TODAY = new Date();
+
+const PRESET_EVENTS = {"2026-06-15":[{"name":"V報到","note":"","color":"#f472b6"}],"2026-06-17":[{"name":"J團練","note":"","color":"#06b6d4"}],"2026-06-18":[{"name":"露營","note":"","color":"#9ca3af"},{"name":"J報到","note":"","color":"#06b6d4"}],"2026-06-19":[{"name":"露營","note":"","color":"#9ca3af"}],"2026-06-24":[{"name":"J團練","note":"","color":"#06b6d4"}],"2026-06-25":[{"name":"上海","note":"","color":"#9ca3af"},{"name":"V國文19-21:00","note":"","color":"#f472b6"}],"2026-06-26":[{"name":"上海","note":"","color":"#9ca3af"}],"2026-06-27":[{"name":"上海","note":"","color":"#9ca3af"},{"name":"J表演","note":"","color":"#06b6d4"}],"2026-06-28":[{"name":"上海","note":"","color":"#9ca3af"},{"name":"J國文10-12:00","note":"","color":"#06b6d4"}],"2026-06-29":[{"name":"廈門","note":"","color":"#9ca3af"},{"name":"CIP1","note":"","color":"#f97316"}],"2026-06-30":[{"name":"廈門","note":"","color":"#9ca3af"},{"name":"CIP1","note":"","color":"#f97316"}],"2026-07-01":[{"name":"廈門","note":"","color":"#9ca3af"},{"name":"CIP1","note":"","color":"#f97316"}],"2026-07-02":[{"name":"廈門","note":"","color":"#9ca3af"},{"name":"CIP1","note":"","color":"#f97316"}],"2026-07-03":[{"name":"廈門","note":"","color":"#9ca3af"},{"name":"CIP1","note":"","color":"#f97316"}],"2026-07-04":[{"name":"廈門","note":"","color":"#9ca3af"},{"name":"CIP1","note":"","color":"#f97316"}],"2026-07-06":[{"name":"CIP2","note":"","color":"#f97316"}],"2026-07-07":[{"name":"CIP2","note":"","color":"#f97316"},{"name":"中餐8-13:30","note":"","color":"#eab308"}],"2026-07-08":[{"name":"CIP2","note":"","color":"#f97316"}],"2026-07-09":[{"name":"CIP2","note":"","color":"#f97316"}],"2026-07-10":[{"name":"CIP2","note":"","color":"#f97316"},{"name":"中餐13:30-18:30","note":"","color":"#eab308"}],"2026-07-12":[{"name":"J編班直撥","note":"","color":"#06b6d4"},{"name":"V多益14-16:30","note":"","color":"#f472b6"},{"name":"J英文18-19:30","note":"","color":"#06b6d4"}],"2026-07-13":[{"name":"J英速魔法","note":"","color":"#06b6d4"}],"2026-07-14":[{"name":"J英速魔法","note":"","color":"#06b6d4"},{"name":"中餐8-13:30","note":"","color":"#eab308"}],"2026-07-15":[{"name":"J英速魔法","note":"","color":"#06b6d4"}],"2026-07-19":[{"name":"V多益14-16:30","note":"","color":"#f472b6"},{"name":"J英文18-19:30","note":"","color":"#06b6d4"}],"2026-07-24":[{"name":"泰國","note":"","color":"#9ca3af"},{"name":"中餐13:30-18:30","note":"","color":"#eab308"}],"2026-07-25":[{"name":"泰國","note":"","color":"#9ca3af"}],"2026-07-26":[{"name":"泰國","note":"","color":"#9ca3af"},{"name":"V多益14-16:30","note":"","color":"#f472b6"},{"name":"J英文18-19:30","note":"","color":"#06b6d4"}],"2026-07-27":[{"name":"泰國","note":"","color":"#9ca3af"}],"2026-07-28":[{"name":"泰國","note":"","color":"#9ca3af"},{"name":"中餐8-13:30","note":"","color":"#eab308"}],"2026-07-29":[{"name":"泰國","note":"","color":"#9ca3af"}],"2026-08-01":[{"name":"姐弟制服","note":"","color":"#eab308"}],"2026-08-02":[{"name":"V多益14-16:30","note":"","color":"#f472b6"},{"name":"J英文18-19:30","note":"","color":"#06b6d4"}],"2026-08-09":[{"name":"V多益14-16:30","note":"","color":"#f472b6"},{"name":"J英文18-19:30","note":"","color":"#06b6d4"}],"2026-08-10":[{"name":"V香水19-21:30","note":"","color":"#f472b6"}],"2026-08-11":[{"name":"V新訓(全)","note":"","color":"#f472b6"},{"name":"中餐8-13:30","note":"","color":"#eab308"}],"2026-08-12":[{"name":"V新訓(半)","note":"","color":"#f472b6"}],"2026-08-16":[{"name":"V多益14-16:30","note":"","color":"#f472b6"},{"name":"J英文18-19:30","note":"","color":"#06b6d4"}],"2026-08-19":[{"name":"日本","note":"","color":"#9ca3af"}],"2026-08-20":[{"name":"日本","note":"","color":"#9ca3af"}],"2026-08-21":[{"name":"日本","note":"","color":"#9ca3af"}],"2026-08-22":[{"name":"日本","note":"","color":"#9ca3af"}],"2026-08-23":[{"name":"上海","note":"","color":"#9ca3af"},{"name":"V多益14-16:30","note":"","color":"#f472b6"},{"name":"J英文18-19:30","note":"","color":"#06b6d4"}],"2026-08-24":[{"name":"上海","note":"","color":"#9ca3af"},{"name":"J新訓","note":"","color":"#06b6d4"}],"2026-08-25":[{"name":"上海","note":"","color":"#9ca3af"},{"name":"J新訓","note":"","color":"#06b6d4"}],"2026-08-30":[{"name":"J英文18-19:30","note":"","color":"#06b6d4"}],"2026-08-31":[{"name":"開學","note":"","color":"#ef4444"}],"2026-07-21":[{"name":"中餐8-13:30","note":"","color":"#eab308"}],"2026-08-04":[{"name":"中餐8-13:30","note":"","color":"#eab308"}],"2026-08-18":[{"name":"中餐8-13:30","note":"","color":"#eab308"}],"2026-07-17":[{"name":"中餐13:30-18:30","note":"","color":"#eab308"}],"2026-07-31":[{"name":"中餐13:30-18:30","note":"","color":"#eab308"}],"2026-08-07":[{"name":"中餐13:30-18:30","note":"","color":"#eab308"}],"2026-08-14":[{"name":"中餐13:30-18:30","note":"","color":"#eab308"}]};
+
+// Merge preset into localStorage — new dates/events are always added
+const stored = localStorage.getItem('summer2026_v3');
+let events;
+if (!stored) {
+  events = PRESET_EVENTS;
+} else {
+  events = JSON.parse(stored);
+  for (const [date, evList] of Object.entries(PRESET_EVENTS)) {
+    if (!events[date]) {
+      events[date] = evList;
+    } else {
+      const existingNames = events[date].map(e => e.name);
+      for (const ev of evList) {
+        if (!existingNames.includes(ev.name)) {
+          events[date].push(ev);
+        }
+      }
+    }
+  }
+}
+localStorage.setItem('summer2026_v3', JSON.stringify(events));
+let editingKey = null;
+let selectedDate = null;
+let selectedColor = COLORS[0];
+
+function saveEvents() {
+  localStorage.setItem('summer2026_v3', JSON.stringify(events));
+}
+
+function dateKey(y, m, d) {
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function isToday(y, m, d) {
+  return TODAY.getFullYear() === y && TODAY.getMonth()+1 === m && TODAY.getDate() === d;
+}
+
+function buildCalendar() {
+  const wrapper = document.getElementById('calendarWrapper');
+  wrapper.innerHTML = '';
+
+  MONTHS.forEach(({ year, month, label }) => {
+    const firstDay = new Date(year, month - 1, 1).getDay();
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    const block = document.createElement('div');
+    block.className = 'month-block';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'month-header';
+    header.textContent = `${year} 年 ${label}`;
+    block.appendChild(header);
+
+    // Weekdays
+    const wd = document.createElement('div');
+    wd.className = 'weekdays';
+    WEEKDAYS.forEach(d => { const s = document.createElement('span'); s.textContent = d; wd.appendChild(s); });
+    block.appendChild(wd);
+
+    // Grid
+    const grid = document.createElement('div');
+    grid.className = 'days-grid';
+
+    // Empty cells before
+    for (let i = 0; i < firstDay; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'day-cell empty';
+      grid.appendChild(cell);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dow = (firstDay + d - 1) % 7;
+      const key = dateKey(year, month, d);
+      const cell = document.createElement('div');
+      cell.className = 'day-cell' +
+        (isToday(year, month, d) ? ' today' : '') +
+        (dow === 0 ? ' sunday' : '') +
+        (dow === 6 ? ' saturday' : '');
+
+      const numDiv = document.createElement('div');
+      numDiv.className = 'day-num';
+      numDiv.textContent = d;
+      cell.appendChild(numDiv);
+
+      const evList = document.createElement('div');
+      evList.className = 'events-list';
+
+      (events[key] || []).slice(0, 3).forEach((ev, idx) => {
+        const chip = document.createElement('div');
+        chip.className = 'event-chip';
+        chip.style.background = ev.color || COLORS[0];
+        chip.textContent = ev.name;
+        chip.title = ev.name + (ev.note ? '\n' + ev.note : '');
+        chip.onclick = (e) => { e.stopPropagation(); openModal(key, idx); };
+        evList.appendChild(chip);
+      });
+
+      if ((events[key] || []).length > 3) {
+        const more = document.createElement('div');
+        more.style.cssText = 'font-size:0.68rem;color:#5c6bc0;padding:1px 4px';
+        more.textContent = `+${events[key].length - 3} 更多`;
+        evList.appendChild(more);
+      }
+
+      cell.appendChild(evList);
+      cell.addEventListener('click', () => openModal(key, null));
+      grid.appendChild(cell);
+    }
+
+    block.appendChild(grid);
+    wrapper.appendChild(block);
+  });
+
+  buildTable();
+}
+
+function buildTable() {
+  const tbody = document.getElementById('eventTableBody');
+  const allEvents = [];
+  Object.keys(events).sort().forEach(key => {
+    (events[key] || []).forEach((ev, idx) => {
+      allEvents.push({ key, idx, ev });
+    });
+  });
+
+  if (allEvents.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="no-events">尚無活動，點擊日期新增！</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = '';
+  allEvents.forEach(({ key, idx, ev }) => {
+    const [y, m, d] = key.split('-');
+    const dateStr = `${y}/${m}/${d}`;
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = () => openModal(key, idx);
+    tr.innerHTML = `
+      <td class="event-dot-td"><span class="event-dot-sm" style="background:${ev.color || COLORS[0]}"></span></td>
+      <td>${dateStr}</td>
+      <td>${ev.name}</td>
+      <td style="color:#7b8ab8">${ev.note || '-'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Build color picker
+const colorRow = document.getElementById('colorRow');
+COLORS.forEach(c => {
+  const dot = document.createElement('div');
+  dot.className = 'color-dot' + (c === selectedColor ? ' selected' : '');
+  dot.style.background = c;
+  dot.onclick = () => {
+    selectedColor = c;
+    document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+    dot.classList.add('selected');
+  };
+  colorRow.appendChild(dot);
+});
+
+function openModal(key, evIdx) {
+  selectedDate = key;
+  const [y, m, d] = key.split('-');
+  const monthNames = ['一','二','三','四','五','六','七','八','九','十','十一','十二'];
+  document.getElementById('modalTitle').textContent =
+    evIdx !== null ? '編輯活動' : `新增活動 — ${parseInt(m)}月${parseInt(d)}日`;
+
+  if (evIdx !== null) {
+    editingKey = evIdx;
+    const ev = events[key][evIdx];
+    document.getElementById('inputName').value = ev.name;
+    document.getElementById('inputNote').value = ev.note || '';
+    selectedColor = ev.color || COLORS[0];
+    document.getElementById('btnDelete').style.display = 'block';
+  } else {
+    editingKey = null;
+    document.getElementById('inputName').value = '';
+    document.getElementById('inputNote').value = '';
+    selectedColor = COLORS[0];
+    document.getElementById('btnDelete').style.display = 'none';
+  }
+
+  document.querySelectorAll('.color-dot').forEach(d => {
+    d.classList.toggle('selected', d.style.background === hexToRgb(selectedColor) || d.style.background === selectedColor);
+  });
+
+  document.getElementById('overlay').classList.add('active');
+  setTimeout(() => document.getElementById('inputName').focus(), 50);
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('active');
+  editingKey = null;
+  selectedDate = null;
+}
+
+function saveEvent() {
+  const name = document.getElementById('inputName').value.trim();
+  if (!name) { document.getElementById('inputName').focus(); return; }
+  const note = document.getElementById('inputNote').value.trim();
+
+  if (!events[selectedDate]) events[selectedDate] = [];
+
+  if (editingKey !== null) {
+    events[selectedDate][editingKey] = { name, note, color: selectedColor };
+  } else {
+    events[selectedDate].push({ name, note, color: selectedColor });
+  }
+
+  saveEvents();
+  closeModal();
+  buildCalendar();
+}
+
+function deleteEvent() {
+  if (editingKey === null) return;
+  events[selectedDate].splice(editingKey, 1);
+  if (events[selectedDate].length === 0) delete events[selectedDate];
+  saveEvents();
+  closeModal();
+  buildCalendar();
+}
+
+document.getElementById('overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && document.getElementById('overlay').classList.contains('active')) {
+    if (e.target.tagName !== 'TEXTAREA') saveEvent();
+  }
+});
+
+buildCalendar();
+</script>
+</body>
+</html>
